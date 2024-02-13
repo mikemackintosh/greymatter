@@ -1,0 +1,21 @@
+run:
+  timeout: 1m
+
+linters-settings:
+  cyclop:
+    max-complexity: 10
+    package-average: 2.0
+  
+  errcheck:
+    check-type-assertions: true
+  
+  exhaustive:
+    check:
+      - switch
+      - map
+    
+  funlen:
+    lines: 60
+    statements: 40
+
+  

@@ -1,0 +1,28 @@
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+    bin = "./tmp/main"
+    cmd = "go build -o ./tmp/main ./cmd/api/..."
+    exclude_dir = ["tmp", "web", "testdata"]
+    exclude_file = ["main"]
+    exclude_regex = ["_test.go"]
+    follow_symlink = false
+    exclude_unchanged = false
+    include_ext = ["go"]
+    kill_delay = "0s"
+    stop_on_error = true
+
+[color]
+    app = "white"
+    build = "yellow"
+    main = "magenta"
+    runner = "green"
+    watcher = "cyan"
+
+[log]
+    time = false
+
+[screen]
+    clear_on_rebuild = false
