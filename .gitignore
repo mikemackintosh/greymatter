@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 
 # local
-.env
+.env*
 tmp/
+ingest_data/
