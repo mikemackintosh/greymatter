@@ -19,3 +19,6 @@ clean:
 
 up:
 	docker compose -f quickstart.yml up
+
+up-all:
+	docker compose -f quickstart.yml -f quickstart-with-elk.yml up	

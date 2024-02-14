@@ -27,3 +27,4 @@ dist-ssr
 .env*
 tmp/
 ingest_data/
+*.env
