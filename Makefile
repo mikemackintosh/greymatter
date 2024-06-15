@@ -17,8 +17,12 @@ clean:
 	@docker compose -f quickstart.yml rm -f -v
 	@docker volume ls | grep -i greymatter | awk '{print $2}' | xargs docker volume rm || echo -e "\nNo volume to delete"
 
+
 up:
 	docker compose -f quickstart.yml up
+
+up-auth:
+	docker compose -f quickstart.yml -f quickstart-ory up
 
 up-all:
 	docker compose -f quickstart.yml -f quickstart-with-elk.yml up	

@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
     bin = "./tmp/main"
     cmd = "go build -o ./tmp/main ./cmd/api/..."
-    exclude_dir = ["tmp", "web", "testdata"]
+    exclude_dir = ["tmp", "web", "testdata", "_infra", "ingest_data"]
     exclude_file = ["main"]
     exclude_regex = ["_test.go"]
     follow_symlink = false

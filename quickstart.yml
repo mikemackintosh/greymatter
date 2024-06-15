@@ -7,7 +7,9 @@ services:
     image: nginx:latest
     restart: always
     volumes:
-      - ./_infra/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./_infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./_infra/nginx/api.conf:/etc/nginx/conf.d/api.conf:ro
+      - ./_infra/nginx/web.conf:/etc/nginx/conf.d/web.conf:ro
     ports:
       - 8000:8000
     links:
@@ -60,90 +62,6 @@ services:
     networks:
       - devnet
 
-  keto-migrate:
-    env_file: .env
-    image: oryd/keto:v0.12.0-alpha.0
-    links:
-      - database:database
-    volumes:
-      - ./_infra/keto-config/keto.yml:/home/ory/keto.yml:ro
-    environment:
-      - LOG_LEVEL=debug
-      - DSN=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${AUTHZ_DB_NAME}?sslmode=disable
-    command: ["migrate", "up", "-y"]
-    restart: on-failure
-    depends_on:
-      database:
-        condition: service_healthy    
-    networks:
-      - devnet  
-
-  keto:
-    env_file: .env
-    image: oryd/keto:v0.12.0-alpha.0
-    restart: on-failure
-    ports:
-      - "4466:4466"
-      - "4467:4467"
-    environment:
-      - DSN=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${AUTHZ_DB_NAME}?sslmode=disable
-    volumes:
-      - ./_infra/keto-config/keto.yml:/home/ory/keto.yml:ro
-    command: serve -c /home/ory/keto.yml
-    depends_on:
-      database:
-        condition: service_healthy    
-    networks:
-      - devnet  
-
-  kratos-migrate:
-    env_file: .env
-    image: oryd/kratos:v1.0.0
-    environment:
-      - DSN=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${AUTHN_DB_NAME}?sslmode=disable
-    volumes:
-      - ./_infra/kratos-config:/etc/config/kratos:ro
-    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
-    restart: on-failure
-    depends_on:
-      database:
-        condition: service_healthy    
-    networks:
-      - devnet
-
-  #kratos-selfservice-ui:
-  #  image: oryd/kratos-selfservice-ui-node:v1.0.0
-  #  restart: on-failure
-  #  environment:
-  #    - KRATOS_PUBLIC_URL=http://kratos:4433
-  #    - KRATOS_BROWSER_URL=http://localhost:8000/login
-  #  networks:
-  #    - devnet
-
-  kratos:
-    env_file: .env
-    image: oryd/kratos:v1.0.0
-    ports:
-      - '4433:4433' # public
-      - '4434:4434' # admin
-    restart: unless-stopped
-    command: serve -c /etc/config/kratos/kratos.yml --dev
-    environment:
-      - DSN=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${AUTHN_DB_NAME}?sslmode=disable
-      - LOG_LEVEL=trace
-      - KRATOS_ADMIN_URL=http://localhost:8000
-      - KRATOS_PUBLIC_URL=http://localhost:8000
-      - SMTP_URL=smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
-    volumes:
-      - ./_infra/kratos-config:/etc/config/kratos:ro
-    depends_on:
-      kratos-migrate:
-        condition: service_completed_successfully
-      database:
-        condition: service_healthy
-    networks:
-      - devnet
-
   database:
     image: postgres:15-alpine
     restart: always
@@ -164,79 +82,8 @@ services:
     networks:
       - devnet  
 
-  hydra:
-    image: oryd/hydra:v2.2.0-rc.3
-    ports:
-      - "4444:4444" # Public port
-      - "4445:4445" # Admin port
-      - "5555:5555" # Port for hydra token user
-    command: serve -c /etc/config/hydra/hydra.yml all --dev
-    volumes:
-      - ./_infra/hydra-config/hydra.yml:/etc/config/hydra/hydra.yml:ro
-    environment:
-      - DSN=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${OIDC_DB_NAME}?sslmode=disable     
-    restart: unless-stopped
-    depends_on:
-      - hydra-migrate
-    networks:
-      - devnet
-
-  hydra-migrate:
-    image: oryd/hydra:v2.2.0-rc.3
-    environment:
-      - DSN=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${OIDC_DB_NAME}?sslmode=disable     
-    command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
-    volumes:
-      - ./_infra/hydra-config/hydra.yml:/etc/config/hydra/hydra.yml:ro
-    restart: on-failure
-    networks:
-      - devnet
-
-  grafana:
-    image: grafana/grafana-enterprise:latest
-    ports:
-      - 9000:3000
-    environment:
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-      - GF_DATABASE_TYPE=postgres
-      - GF_DATABASE_HOST=database:5432
-      - GF_DATABASE_NAME=${GRAFANA_DB_NAME}
-      - GF_DATABASE_USER=${DB_USER}
-      - GF_DATABASE_PASSWORD=${DB_PASSWORD}
-      - GF_DATABASE_SSL_MODE=disable
-    restart: unless-stopped
-    depends_on:
-      - prometheus
-      - database
-    volumes:
-      - grafana-storage:/var/lib/grafana
-    networks:
-      - devnet
-    
-  prometheus:
-    image: prom/prometheus:v2.12.0
-    ports:
-      - "9090:9090"
-    command: --config.file=/etc/prometheus/prometheus.yml
-    volumes:
-      - ./_infra/prometheus.config.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - kratos
-      - hydra
-    networks:
-      - devnet
-
-  mailslurper:
-    image: oryd/mailslurper:latest-smtps
-    ports:
-      - "4436:4436"
-      - "4437:4437"
-    networks:
-      - devnet
-
 volumes:
   postgres_data:
-  grafana-storage:
 
 networks:
   devnet:
